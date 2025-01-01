@@ -1,4 +1,4 @@
-// 拡張機能がインストールされたときにコンテキストメニューを作成
+// コンテキストメニューを作成
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "createStickyNote",

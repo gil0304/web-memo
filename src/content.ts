@@ -1,10 +1,9 @@
-// クリック位置の型
 interface ClickPosition {
   x: number;
   y: number;
 }
 
-// メモを作成する関数
+// メモを作成
 const createStickyNote = (x: number, y: number, text: string = ""): void => {
   // メモのコンテナを作成
   const note = document.createElement("div");
@@ -31,7 +30,7 @@ const createStickyNote = (x: number, y: number, text: string = ""): void => {
   textArea.style.width = "100%";
   textArea.style.color = text ? "black" : "gray";
 
-  // プレースホルダーの動作
+  // プレースホルダー
   textArea.addEventListener("focus", () => {
     if (textArea.innerText === "ここにメモを入力...") {
       textArea.innerText = "";
@@ -67,7 +66,7 @@ const createStickyNote = (x: number, y: number, text: string = ""): void => {
 
   deleteButton.addEventListener("click", () => {
     note.remove(); // メモを削除
-    saveNotes(); // 削除後に保存
+    saveNotes();
   });
 
   // メモに削除ボタンとテキストエリアを追加
@@ -123,7 +122,7 @@ const saveNotes = (): void => {
   localStorage.setItem("stickyNotes", JSON.stringify(notes));
 };
 
-// ページをリロードした際に保存されたメモを復元
+// ページをリロードした際に保存されたメモを取得
 window.addEventListener("load", () => {
   const savedNotes = localStorage.getItem("stickyNotes");
   const notes: Array<ClickPosition & { text: string }> = savedNotes ? JSON.parse(savedNotes) : [];
