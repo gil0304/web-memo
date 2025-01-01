@@ -1,5 +1,5 @@
-interface StickyNote {
-  text: string;
+// クリック位置の型
+interface ClickPosition {
   x: number;
   y: number;
 }
@@ -7,18 +7,18 @@ interface StickyNote {
 // メモを作成する関数
 const createStickyNote = (x: number, y: number, text: string = ""): void => {
   // メモのコンテナを作成
-  const noteContainer = document.createElement("div");
-  noteContainer.style.position = "absolute";
-  noteContainer.style.left = `${x}px`;
-  noteContainer.style.top = `${y}px`;
-  noteContainer.style.width = "150px";
-  noteContainer.style.minHeight = "50px";
-  noteContainer.style.backgroundColor = "yellow";
-  noteContainer.style.padding = "10px";
-  noteContainer.style.borderRadius = "5px";
-  noteContainer.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
-  noteContainer.style.zIndex = "1000";
-  noteContainer.style.cursor = "move";
+  const note = document.createElement("div");
+  note.style.position = "absolute";
+  note.style.left = `${x}px`;
+  note.style.top = `${y}px`;
+  note.style.width = "150px";
+  note.style.minHeight = "50px";
+  note.style.backgroundColor = "yellow";
+  note.style.padding = "10px";
+  note.style.borderRadius = "5px";
+  note.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+  note.style.zIndex = "1000";
+  note.style.cursor = "move";
 
   // メモのテキストエリアを作成
   const textArea = document.createElement("div");
@@ -29,10 +29,9 @@ const createStickyNote = (x: number, y: number, text: string = ""): void => {
   textArea.style.border = "none";
   textArea.style.resize = "none";
   textArea.style.width = "100%";
-  textArea.style.minHeight = "30px";
   textArea.style.color = text ? "black" : "gray";
 
-  // テキストエリアのプレースホルダー対応
+  // プレースホルダーの動作
   textArea.addEventListener("focus", () => {
     if (textArea.innerText === "ここにメモを入力...") {
       textArea.innerText = "";
@@ -67,28 +66,28 @@ const createStickyNote = (x: number, y: number, text: string = ""): void => {
   deleteButton.style.zIndex = "1001";
 
   deleteButton.addEventListener("click", () => {
-    noteContainer.remove(); // メモを削除
+    note.remove(); // メモを削除
     saveNotes(); // 削除後に保存
   });
 
   // メモに削除ボタンとテキストエリアを追加
-  noteContainer.appendChild(textArea);
-  noteContainer.appendChild(deleteButton);
-  document.body.appendChild(noteContainer);
+  note.appendChild(textArea);
+  note.appendChild(deleteButton);
+  document.body.appendChild(note);
 
   // ドラッグ可能にする
   let isDragging = false;
 
-  noteContainer.addEventListener("mousedown", (event: MouseEvent) => {
+  note.addEventListener("mousedown", (event: MouseEvent) => {
     if (event.target === textArea) return; // テキストエリアをクリックした場合はドラッグを無効化
     isDragging = true;
-    const offsetX = event.clientX - noteContainer.getBoundingClientRect().left;
-    const offsetY = event.clientY - noteContainer.getBoundingClientRect().top;
+    const offsetX = event.clientX - note.getBoundingClientRect().left;
+    const offsetY = event.clientY - note.getBoundingClientRect().top;
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      noteContainer.style.left = `${e.pageX - offsetX}px`;
-      noteContainer.style.top = `${e.pageY - offsetY}px`;
+      note.style.left = `${e.pageX - offsetX}px`;
+      note.style.top = `${e.pageY - offsetY}px`;
     };
 
     const onMouseUp = () => {
@@ -103,16 +102,22 @@ const createStickyNote = (x: number, y: number, text: string = ""): void => {
   });
 };
 
+// 右クリック位置を保存する
+document.addEventListener("contextmenu", (event: MouseEvent) => {
+  const position: ClickPosition = { x: event.pageX, y: event.pageY };
+  chrome.storage.local.set({ lastClickPosition: position });
+});
+
 // メモを保存する関数
 const saveNotes = (): void => {
-  const notes: StickyNote[] = Array.from(document.querySelectorAll("div"))
+  const notes = Array.from(document.querySelectorAll("div"))
     .filter((note) => note.querySelector("[contentEditable='true']"))
     .map((note) => {
       const textArea = note.querySelector("[contentEditable='true']") as HTMLDivElement;
       return {
         text: textArea.innerText === "ここにメモを入力..." ? "" : textArea.innerText.trim(),
         x: parseInt(note.style.left || "0", 10),
-        y: parseInt(note.style.top || "0", 10),
+        y: parseInt(note.style.top || "0", 10)
       };
     });
   localStorage.setItem("stickyNotes", JSON.stringify(notes));
@@ -120,15 +125,15 @@ const saveNotes = (): void => {
 
 // ページをリロードした際に保存されたメモを復元
 window.addEventListener("load", () => {
-  const notes: StickyNote[] = JSON.parse(localStorage.getItem("stickyNotes") || "[]");
+  const savedNotes = localStorage.getItem("stickyNotes");
+  const notes: Array<ClickPosition & { text: string }> = savedNotes ? JSON.parse(savedNotes) : [];
   notes.forEach(({ text, x, y }) => createStickyNote(x, y, text));
 });
 
 // メッセージを受け取り、指定された位置に付箋を作成
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "createStickyNote") {
-    const x = message.x || window.innerWidth / 2; // 指定されたx座標または中央
-    const y = message.y || window.innerHeight / 2; // 指定されたy座標または中央
+    const { x, y } = message;
     createStickyNote(x, y);
     sendResponse({ status: "success" });
   }
