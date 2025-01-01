@@ -13,7 +13,7 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "dist/background.js"
   },
   "action": {
     "default_popup": "popup.html",
@@ -29,7 +29,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content.js"
+        "dist/content.js"
       ],
       "css": [
         "style.css"

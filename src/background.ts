@@ -3,20 +3,19 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "createStickyNote",
     title: "付箋を作成",
-    contexts: ["page"],
+    contexts: ["page"]
   });
 });
 
-// コンテキストメニューがクリックされたときにスクリプトを実行
+// コンテキストメニューがクリックされたときにメッセージを送信
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "createStickyNote") {
-    if (tab.url.startsWith("chrome://") || tab.url.startsWith("about:")) {
-      console.error("このページでは動作しません");
-      return;
-    }
+  if (info.menuItemId === "createStickyNote" && tab?.id !== undefined) {
+    // メッセージを content.ts に送信
     chrome.tabs.sendMessage(
       tab.id,
-      { action: "createStickyNote", x: info.pageX, y: info.pageY },
+    {
+    action: "createStickyNote"
+    },
       (response) => {
         if (chrome.runtime.lastError) {
           console.error("エラー:", chrome.runtime.lastError.message);
